@@ -1,5 +1,6 @@
 "use client"
-import { useState } from "react"
+
+import { useState, useEffect } from "react"
 import { useWallet } from '@lazorkit/wallet'
 import { useRouter } from 'next/navigation'
 import { Button } from "@/components/ui/button"
@@ -9,7 +10,20 @@ import { Fingerprint, LogIn, ArrowLeft } from "lucide-react"
 export default function AuthPage() {
   const { connect, isConnecting, isConnected, smartWalletPubkey } = useWallet()
   const [isCreating, setIsCreating] = useState(false)
+  const [hydrated, setHydrated] = useState(false)
   const router = useRouter()
+
+  useEffect(() => {
+    setHydrated(true)
+  }, [])
+
+  // Redirect to dashboard if already connected
+  useEffect(() => {
+    if (!hydrated) return
+    if (isConnected && smartWalletPubkey) {
+      router.replace('/dashboard')
+    }
+  }, [hydrated, isConnected, smartWalletPubkey, router])
 
   const handleCreateWallet = async () => {
     setIsCreating(true)
@@ -36,6 +50,11 @@ export default function AuthPage() {
   const statusText = isConnected 
     ? `Connected: ${smartWalletPubkey?.toString().slice(0,6)}...` 
     : 'Ready for Devnet'
+
+  // Don't render if already connected (will redirect)
+  if (hydrated && isConnected) {
+    return null
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-background/95 flex flex-col">

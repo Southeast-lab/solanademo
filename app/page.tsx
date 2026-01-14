@@ -1,17 +1,33 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { useWallet } from "@lazorkit/wallet"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { ArrowRight } from "lucide-react"
 
 export default function HomePage() {
+  const { isConnected, smartWalletPubkey } = useWallet()
+  const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
+  const [hydrated, setHydrated] = useState(false)
+
+  useEffect(() => {
+    setHydrated(true)
+  }, [])
 
   const handleGetStarted = () => {
     setIsLoading(true)
-    // Navigate to auth page
-    window.location.href = "/auth"
+    if (isConnected) {
+      router.push("/dashboard")
+    } else {
+      router.push("/auth")
+    }
   }
+
+  const shortAddress = smartWalletPubkey?.toString()
+    ? `${smartWalletPubkey.toString().slice(0, 6)}...${smartWalletPubkey.toString().slice(-6)}`
+    : ""
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-background/95 flex flex-col">
@@ -25,6 +41,12 @@ export default function HomePage() {
             <span className="font-bold text-lg">Solana Demo</span>
           </div>
           <div className="flex items-center gap-4">
+            {hydrated && isConnected && (
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-green-200 bg-green-50">
+                <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                <span className="text-sm font-medium text-green-700">{shortAddress}</span>
+              </div>
+            )}
             <a href="#" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
               Docs
             </a>
@@ -75,13 +97,22 @@ export default function HomePage() {
 
           {/* CTA Button */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center pt-8">
-            <Button size="lg" onClick={handleGetStarted} disabled={isLoading} className="gap-2">
-              Get Started
-              <ArrowRight className="w-4 h-4" />
-            </Button>
-            <Button size="lg" variant="outline">
-              View Docs
-            </Button>
+            {hydrated && isConnected ? (
+              <Button size="lg" onClick={handleGetStarted} disabled={isLoading} className="gap-2">
+                Go to Dashboard
+                <ArrowRight className="w-4 h-4" />
+              </Button>
+            ) : (
+              <>
+                <Button size="lg" onClick={handleGetStarted} disabled={isLoading} className="gap-2">
+                  Get Started
+                  <ArrowRight className="w-4 h-4" />
+                </Button>
+                <Button size="lg" variant="outline">
+                  View Docs
+                </Button>
+              </>
+            )}
           </div>
         </div>
       </main>
